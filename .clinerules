@@ -1,0 +1,8 @@
+# Pangenget - Project Rules
+
+- Framework: TanStack Start (React) with File-Based Routing in `src/routes/`.
+- Package Manager: ALWAYS use `bun` (e.g., `bun add`, `bun run dev`).
+- Linter & Formatter: Biome. Run `bun biome check` to validate code. Do NOT use ESLint or Prettier.
+- Database: Neon Postgres with Drizzle ORM.
+- Server Logic: Use TanStack Start's `createServerFn` for server-side code and database queries. DO NOT create Next.js API routes or standard Express controllers.
+- Type Safety: Ensure full end-to-end TypeScript safety across routes, loaders, and server functions.
