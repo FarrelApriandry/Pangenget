@@ -1,5 +1,4 @@
 import { pgTable, uuid, text, varchar, timestamp, foreignKey, boolean, jsonb, pgEnum } from "drizzle-orm/pg-core"
-import { sql } from "drizzle-orm"
 
 export const priority = pgEnum("priority", ['low', 'medium', 'high'])
 export const status = pgEnum("status", ['todo', 'in_progress', 'completed'])

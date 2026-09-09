@@ -1,5 +1,5 @@
 import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
-
+import { Navbar } from "#/components/layout/Navbar";
 import appCss from "../styles.css?url";
 
 export const Route = createRootRoute({
@@ -35,11 +35,12 @@ export const Route = createRootRoute({
 
 function RootDocument({ children }: { children: React.ReactNode }) {
 	return (
-		<html lang="id">
+		<html lang="id" className="dark">
 			<head>
 				<HeadContent />
 			</head>
 			<body className="bg-canvas text-text-main min-h-screen font-sans antialiased selection:bg-primary selection:text-canvas">
+				<Navbar />
 				{children}
 				<Scripts />
 			</body>
