@@ -63,6 +63,7 @@ function TasksPage() {
 					title: parsed.title,
 					deadline: parsed.deadline,
 					priority: parsed.priority,
+					categoryName: parsed.categoryName,
 				},
 			});
 			router.invalidate();

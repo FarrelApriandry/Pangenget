@@ -54,6 +54,20 @@ export const getCompletedToday = createServerFn({ method: "GET" }).handler(
 	},
 );
 
+// ── Resolve or create category by name ─────────────────────
+async function resolveOrCreateCategory(name: string): Promise<string> {
+	const existing = await db.query.categories.findFirst({
+		where: and(eq(categories.userId, DEV_USER_ID), eq(categories.name, name)),
+	});
+	if (existing) return existing.id;
+
+	const [created] = await db
+		.insert(categories)
+		.values({ userId: DEV_USER_ID, name })
+		.returning({ id: categories.id });
+	return created.id;
+}
+
 // ── POST: Create task ──────────────────────────────────────
 export const createTask = createServerFn({ method: "POST" })
 	.validator(
@@ -63,10 +77,16 @@ export const createTask = createServerFn({ method: "POST" })
 			deadline?: Date | null;
 			priority?: "low" | "medium" | "high";
 			categoryId?: string | null;
+			categoryName?: string | null;
 			isMyDay?: boolean;
 		}) => data,
 	)
 	.handler(async ({ data }) => {
+		let categoryId = data.categoryId ?? null;
+		if (!categoryId && data.categoryName) {
+			categoryId = await resolveOrCreateCategory(data.categoryName);
+		}
+
 		const [task] = await db
 			.insert(tasks)
 			.values({
@@ -76,7 +96,7 @@ export const createTask = createServerFn({ method: "POST" })
 				deadline: data.deadline ?? null,
 				priority: data.priority ?? "medium",
 				isMyDay: data.isMyDay ?? false,
-				categoryId: data.categoryId ?? null,
+				categoryId,
 			})
 			.returning();
 

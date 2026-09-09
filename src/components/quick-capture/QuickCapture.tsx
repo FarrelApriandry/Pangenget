@@ -90,11 +90,12 @@ export function QuickCapture({ onSubmit }: QuickCaptureProps) {
 					{parsed.deadline && (
 						<span className="px-2 py-0.5 rounded bg-safe-bg text-safe-text font-mono text-[11px] border border-safe-border/40">
 							⏰{" "}
-							{parsed.deadline.toLocaleDateString("id-ID", {
-								weekday: "short",
-								day: "numeric",
-								month: "short",
-							})}
+							{parsed.rawDateText ??
+								parsed.deadline.toLocaleDateString("id-ID", {
+									weekday: "short",
+									day: "numeric",
+									month: "short",
+								})}
 						</span>
 					)}
 					<span
@@ -114,7 +115,7 @@ export function QuickCapture({ onSubmit }: QuickCaptureProps) {
 					</span>
 					{parsed.categoryName && (
 						<span className="px-2 py-0.5 rounded bg-surface-muted text-text-muted font-mono text-[11px] border border-card-border/40">
-							🏷️ @{parsed.categoryName}
+							🏷️ #{parsed.categoryName}
 						</span>
 					)}
 				</div>
