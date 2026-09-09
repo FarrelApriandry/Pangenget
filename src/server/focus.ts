@@ -10,7 +10,7 @@ import { and, eq } from "drizzle-orm";
 
 import { db } from "#/db/index.server";
 import { tasks } from "#/db/schema";
-import { requireUserId } from "#/server/auth";
+import { requireUserId } from "#/server/auth-helpers.server";
 
 // ── POST: Reset My Day ─────────────────────────────────────
 export const resetMyDay = createServerFn({ method: "POST" }).handler(

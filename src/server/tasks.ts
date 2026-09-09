@@ -9,7 +9,7 @@ import { and, asc, desc, eq, or } from "drizzle-orm";
 
 import { db } from "#/db/index.server";
 import { categories, tasks } from "#/db/schema";
-import { requireUserId } from "#/server/auth";
+import { requireUserId } from "#/server/auth-helpers.server";
 
 // ── GET: My Day tasks ─────────────────────────────────────
 export const getMyDayTasks = createServerFn({ method: "GET" }).handler(

@@ -2,6 +2,8 @@
  * Auth Server Functions — Registration, login, logout, session validation
  *
  * Uses cookie-based sessions stored in the `sessions` table.
+ * Only `createServerFn` wrappers are exported here to keep this file
+ * safe for client imports. Plain helpers live in `auth-helpers.server.ts`.
  */
 
 import { redirect } from "@tanstack/react-router";
@@ -18,34 +20,7 @@ import {
 	setSessionCookie,
 	verifyPassword,
 } from "#/lib/auth-utils.server";
-
-// ── Helpers ────────────────────────────────────────────────
-
-/** Read the current session cookie, validate it, and return the userId. */
-export async function getCurrentUserId(): Promise<string | null> {
-	const sessionId = readSessionCookie();
-	if (!sessionId) return null;
-
-	const session = await db.query.sessions.findFirst({
-		where: eq(sessions.id, sessionId),
-	});
-
-	if (!session) return null;
-	if (new Date(session.expiresAt) < new Date()) {
-		// Expired — clean up
-		await db.delete(sessions).where(eq(sessions.id, sessionId));
-		return null;
-	}
-
-	return session.userId;
-}
-
-/** Like getCurrentUserId but throws if unauthenticated. */
-export async function requireUserId(): Promise<string> {
-	const userId = await getCurrentUserId();
-	if (!userId) throw new Error("Unauthorized");
-	return userId;
-}
+import { getCurrentUserId } from "#/server/auth-helpers.server";
 
 // ── GET: Current user ──────────────────────────────────────
 
