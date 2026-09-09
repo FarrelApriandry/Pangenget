@@ -2,23 +2,22 @@
  * Task CRUD Server Functions — FR-1.1, FR-2.1, FR-2.3
  *
  * All task operations via TanStack Start createServerFn.
- * Uses a placeholder userId until Neon Auth is wired.
+ * Authenticated via cookie-based sessions.
  */
 import { createServerFn } from "@tanstack/react-start";
 import { and, asc, desc, eq, or } from "drizzle-orm";
 
-import { db } from "#/db";
+import { db } from "#/db/index.server";
 import { categories, tasks } from "#/db/schema";
-
-// TODO: Replace with real auth session when Neon Auth is integrated.
-const DEV_USER_ID = "dev-user";
+import { requireUserId } from "#/server/auth";
 
 // ── GET: My Day tasks ─────────────────────────────────────
 export const getMyDayTasks = createServerFn({ method: "GET" }).handler(
 	async () => {
+		const userId = await requireUserId();
 		return db.query.tasks.findMany({
 			where: and(
-				eq(tasks.userId, DEV_USER_ID),
+				eq(tasks.userId, userId),
 				eq(tasks.isMyDay, true),
 				or(eq(tasks.status, "todo"), eq(tasks.status, "in_progress")),
 			),
@@ -31,8 +30,9 @@ export const getMyDayTasks = createServerFn({ method: "GET" }).handler(
 // ── GET: All tasks (active + completed) ───────────────────
 export const getAllTasks = createServerFn({ method: "GET" }).handler(
 	async () => {
+		const userId = await requireUserId();
 		return db.query.tasks.findMany({
-			where: eq(tasks.userId, DEV_USER_ID),
+			where: eq(tasks.userId, userId),
 			with: { category: true },
 			orderBy: [desc(tasks.createdAt)],
 		});
@@ -42,9 +42,10 @@ export const getAllTasks = createServerFn({ method: "GET" }).handler(
 // ── GET: Completed today ───────────────────────────────────
 export const getCompletedToday = createServerFn({ method: "GET" }).handler(
 	async () => {
+		const userId = await requireUserId();
 		return db.query.tasks.findMany({
 			where: and(
-				eq(tasks.userId, DEV_USER_ID),
+				eq(tasks.userId, userId),
 				eq(tasks.status, "completed"),
 				eq(tasks.isMyDay, true),
 			),
@@ -55,15 +56,18 @@ export const getCompletedToday = createServerFn({ method: "GET" }).handler(
 );
 
 // ── Resolve or create category by name ─────────────────────
-async function resolveOrCreateCategory(name: string): Promise<string> {
+async function resolveOrCreateCategory(
+	userId: string,
+	name: string,
+): Promise<string> {
 	const existing = await db.query.categories.findFirst({
-		where: and(eq(categories.userId, DEV_USER_ID), eq(categories.name, name)),
+		where: and(eq(categories.userId, userId), eq(categories.name, name)),
 	});
 	if (existing) return existing.id;
 
 	const [created] = await db
 		.insert(categories)
-		.values({ userId: DEV_USER_ID, name })
+		.values({ userId, name })
 		.returning({ id: categories.id });
 	return created.id;
 }
@@ -82,15 +86,17 @@ export const createTask = createServerFn({ method: "POST" })
 		}) => data,
 	)
 	.handler(async ({ data }) => {
+		const userId = await requireUserId();
+
 		let categoryId = data.categoryId ?? null;
 		if (!categoryId && data.categoryName) {
-			categoryId = await resolveOrCreateCategory(data.categoryName);
+			categoryId = await resolveOrCreateCategory(userId, data.categoryName);
 		}
 
 		const [task] = await db
 			.insert(tasks)
 			.values({
-				userId: DEV_USER_ID,
+				userId,
 				title: data.title,
 				description: data.description ?? null,
 				deadline: data.deadline ?? null,
@@ -228,9 +234,10 @@ export const toggleMyDay = createServerFn({ method: "POST" })
 // ── GET: Recommendation tasks (eligible for My Day) ───────
 export const getRecommendedTasks = createServerFn({ method: "GET" }).handler(
 	async () => {
+		const userId = await requireUserId();
 		return db.query.tasks.findMany({
 			where: and(
-				eq(tasks.userId, DEV_USER_ID),
+				eq(tasks.userId, userId),
 				eq(tasks.isMyDay, false),
 				or(eq(tasks.status, "todo"), eq(tasks.status, "in_progress")),
 			),
@@ -244,8 +251,9 @@ export const getRecommendedTasks = createServerFn({ method: "GET" }).handler(
 // ── GET: All categories ────────────────────────────────────
 export const getCategories = createServerFn({ method: "GET" }).handler(
 	async () => {
+		const userId = await requireUserId();
 		return db.query.categories.findMany({
-			where: eq(categories.userId, DEV_USER_ID),
+			where: eq(categories.userId, userId),
 			orderBy: [asc(categories.name)],
 		});
 	},
@@ -255,10 +263,11 @@ export const getCategories = createServerFn({ method: "GET" }).handler(
 export const createCategory = createServerFn({ method: "POST" })
 	.validator((data: { name: string; color?: string }) => data)
 	.handler(async ({ data }) => {
+		const userId = await requireUserId();
 		const [cat] = await db
 			.insert(categories)
 			.values({
-				userId: DEV_USER_ID,
+				userId,
 				name: data.name,
 				color: data.color ?? "#6366f1",
 			})

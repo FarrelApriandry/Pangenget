@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useCallback, useMemo, useState } from "react";
 import { QuickCapture } from "#/components/quick-capture/QuickCapture";
 import { TaskCard } from "#/components/task/TaskCard";
@@ -18,10 +18,17 @@ type StatusFilter = "all" | "active" | "completed" | "overdue";
 
 export const Route = createFileRoute("/tasks")({
 	loader: async () => {
-		const [allTasks, categories] = await Promise.all([
-			getAllTasks(),
-			getCategories(),
-		]);
+		// Auth guard: redirect to login if no valid session
+		let allTasks: Awaited<ReturnType<typeof getAllTasks>>;
+		let categories: Awaited<ReturnType<typeof getCategories>>;
+		try {
+			[allTasks, categories] = await Promise.all([
+				getAllTasks(),
+				getCategories(),
+			]);
+		} catch {
+			throw redirect({ to: "/login" });
+		}
 		return { allTasks, categories };
 	},
 	component: TasksPage,

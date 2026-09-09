@@ -1,8 +1,36 @@
-import { createRootRoute, HeadContent, Scripts } from "@tanstack/react-router";
+import {
+	createRootRoute,
+	HeadContent,
+	Outlet,
+	Scripts,
+} from "@tanstack/react-router";
 import { Navbar } from "#/components/layout/Navbar";
+import { getCurrentUser } from "#/server/auth";
 import appCss from "../styles.css?url";
 
+interface AuthUser {
+	id: string;
+	email: string;
+	name: string | null;
+}
+
 export const Route = createRootRoute({
+	beforeLoad: async () => {
+		try {
+			const user = await getCurrentUser();
+			return { currentUser: user as AuthUser | null };
+		} catch {
+			return { currentUser: null as AuthUser | null };
+		}
+	},
+	notFoundComponent: () => (
+		<div className="flex flex-col items-center justify-center min-h-[60vh] gap-2">
+			<h1 className="text-xl font-bold">404 — Halaman Tidak Ditemukan</h1>
+			<a href="/" className="text-primary hover:underline text-sm">
+				Kembali ke My Day
+			</a>
+		</div>
+	),
 	head: () => ({
 		meta: [
 			{ charSet: "utf-8" },
@@ -30,10 +58,10 @@ export const Route = createRootRoute({
 			},
 		],
 	}),
-	shellComponent: RootDocument,
+	component: RootDocument,
 });
 
-function RootDocument({ children }: { children: React.ReactNode }) {
+function RootDocument() {
 	return (
 		<html lang="id" className="dark">
 			<head>
@@ -41,7 +69,7 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 			</head>
 			<body className="bg-canvas text-text-main min-h-screen font-sans antialiased selection:bg-primary selection:text-canvas">
 				<Navbar />
-				{children}
+				<Outlet />
 				<Scripts />
 			</body>
 		</html>

@@ -8,18 +8,18 @@
 import { createServerFn } from "@tanstack/react-start";
 import { and, eq } from "drizzle-orm";
 
-import { db } from "#/db";
+import { db } from "#/db/index.server";
 import { tasks } from "#/db/schema";
-
-const DEV_USER_ID = "dev-user";
+import { requireUserId } from "#/server/auth";
 
 // ── POST: Reset My Day ─────────────────────────────────────
 export const resetMyDay = createServerFn({ method: "POST" }).handler(
 	async () => {
+		const userId = await requireUserId();
 		const result = await db
 			.update(tasks)
 			.set({ isMyDay: false })
-			.where(and(eq(tasks.userId, DEV_USER_ID), eq(tasks.isMyDay, true)))
+			.where(and(eq(tasks.userId, userId), eq(tasks.isMyDay, true)))
 			.returning({ id: tasks.id });
 
 		return { cleared: result.length };

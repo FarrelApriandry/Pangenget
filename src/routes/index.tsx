@@ -1,4 +1,4 @@
-import { createFileRoute, useRouter } from "@tanstack/react-router";
+import { createFileRoute, redirect, useRouter } from "@tanstack/react-router";
 import { useCallback } from "react";
 import { MyDayHeader } from "#/components/day/MyDayHeader";
 import { RecommendationList } from "#/components/day/RecommendationList";
@@ -19,9 +19,12 @@ import {
 
 export const Route = createFileRoute("/")({
 	loader: async () => {
-		// Daily reset: clear isMyDay for a fresh start.
-		// Safe to call — idempotent on the same day.
-		await resetMyDay();
+		// Auth guard: redirect to login if no valid session
+		try {
+			await resetMyDay();
+		} catch {
+			throw redirect({ to: "/login" });
+		}
 
 		const [myDayTasks, completedTasks, recommendedTasks] = await Promise.all([
 			getMyDayTasks(),

@@ -18,11 +18,31 @@ export const statusEnum = pgEnum("status", [
 	"completed",
 ]);
 
-// ── Tables ────────────────────────────────────────────────
+// ── Auth Tables ───────────────────────────────────────────
+
+export const users = pgTable("users", {
+	id: uuid("id").defaultRandom().primaryKey(),
+	email: varchar("email", { length: 255 }).notNull().unique(),
+	passwordHash: text("password_hash").notNull(),
+	name: varchar("name", { length: 100 }),
+	createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const sessions = pgTable("sessions", {
+	id: text("id").primaryKey(),
+	userId: uuid("user_id")
+		.references(() => users.id, { onDelete: "cascade" })
+		.notNull(),
+	expiresAt: timestamp("expires_at").notNull(),
+});
+
+// ── App Tables ────────────────────────────────────────────
 
 export const categories = pgTable("categories", {
 	id: uuid("id").defaultRandom().primaryKey(),
-	userId: text("user_id").notNull(),
+	userId: uuid("user_id")
+		.references(() => users.id, { onDelete: "cascade" })
+		.notNull(),
 	name: varchar("name", { length: 50 }).notNull(),
 	color: varchar("color", { length: 7 }).default("#6366f1"),
 	createdAt: timestamp("created_at").defaultNow(),
@@ -30,7 +50,9 @@ export const categories = pgTable("categories", {
 
 export const tasks = pgTable("tasks", {
 	id: uuid("id").defaultRandom().primaryKey(),
-	userId: text("user_id").notNull(),
+	userId: uuid("user_id")
+		.references(() => users.id, { onDelete: "cascade" })
+		.notNull(),
 	categoryId: uuid("category_id").references(() => categories.id, {
 		onDelete: "set null",
 	}),
@@ -54,13 +76,34 @@ export const tasks = pgTable("tasks", {
 
 // ── Relations ──────────────────────────────────────────────
 
-export const categoriesRelations = relations(categories, ({ many }) => ({
+export const usersRelations = relations(users, ({ many }) => ({
+	sessions: many(sessions),
 	tasks: many(tasks),
+	categories: many(categories),
+}));
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+	user: one(users, {
+		fields: [sessions.userId],
+		references: [users.id],
+	}),
+}));
+
+export const categoriesRelations = relations(categories, ({ many, one }) => ({
+	tasks: many(tasks),
+	user: one(users, {
+		fields: [categories.userId],
+		references: [users.id],
+	}),
 }));
 
 export const tasksRelations = relations(tasks, ({ one }) => ({
 	category: one(categories, {
 		fields: [tasks.categoryId],
 		references: [categories.id],
+	}),
+	user: one(users, {
+		fields: [tasks.userId],
+		references: [users.id],
 	}),
 }));
